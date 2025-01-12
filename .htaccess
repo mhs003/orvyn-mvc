@@ -1,0 +1,34 @@
+# 
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+# 
+#     # Redirect all requests to the public folder's index.php
+#     RewriteCond %{REQUEST_FILENAME} !-f
+#     RewriteCond %{REQUEST_FILENAME} !-d
+# 
+#     # RewriteBase /
+#     RewriteRule ^$ public/index.php [L]
+#     RewriteRule ^(.*)$ public/index.php [L]
+#     # RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
+# 
+#     # Optionally, prevent direct access to sensitive files
+#     RewriteCond %{REQUEST_FILENAME} -f
+#     RewriteRule ^(.*)\.(env|htaccess|log|sql|json|ini|phar)$ - [F,L]
+# </IfModule>
+
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+# 
+#     Options -Indexes
+# 
+#     # Ensure the base path is handled properly by appending everything to public/index.php
+#     RewriteCond %{REQUEST_FILENAME} !-d
+#     RewriteCond %{REQUEST_FILENAME} !-f
+# 
+#     RewriteRule ^(.*)$ public/index.php [QSA,L]
+# 
+#     # Deny access to sensitive files
+#     <FilesMatch "\.(env|htaccess|log|sql|json|ini|phar)$">
+#         Require all denied
+#     </FilesMatch>
+# </IfModule>
