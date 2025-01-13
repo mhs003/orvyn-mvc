@@ -1,34 +1,19 @@
-# 
-# <IfModule mod_rewrite.c>
-#     RewriteEngine On
-# 
-#     # Redirect all requests to the public folder's index.php
-#     RewriteCond %{REQUEST_FILENAME} !-f
-#     RewriteCond %{REQUEST_FILENAME} !-d
-# 
-#     # RewriteBase /
-#     RewriteRule ^$ public/index.php [L]
-#     RewriteRule ^(.*)$ public/index.php [L]
-#     # RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
-# 
-#     # Optionally, prevent direct access to sensitive files
-#     RewriteCond %{REQUEST_FILENAME} -f
-#     RewriteRule ^(.*)\.(env|htaccess|log|sql|json|ini|phar)$ - [F,L]
-# </IfModule>
-
-# <IfModule mod_rewrite.c>
-#     RewriteEngine On
-# 
-#     Options -Indexes
-# 
-#     # Ensure the base path is handled properly by appending everything to public/index.php
-#     RewriteCond %{REQUEST_FILENAME} !-d
-#     RewriteCond %{REQUEST_FILENAME} !-f
-# 
-#     RewriteRule ^(.*)$ public/index.php [QSA,L]
-# 
-#     # Deny access to sensitive files
-#     <FilesMatch "\.(env|htaccess|log|sql|json|ini|phar)$">
-#         Require all denied
-#     </FilesMatch>
-# </IfModule>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Skip if already accessing public/index.php to prevent loops
+    RewriteCond %{THE_REQUEST} !^[A-Z]{3,}\s/+public/index\.php [NC]
+    
+    # First, check if the requested path exists in public directory
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -d
+    RewriteRule ^(.*)$ public/$1 [L]
+    
+    # If file doesn't exist, check if it should go to index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ public/index.php [L]
+    
+    # Ensure all non-public paths get redirected to public directory
+    RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
+</IfModule>

@@ -1,6 +1,6 @@
 <?php
 
-use Core\Router;
+use Core\Routing\Router;
 
 
 // Init the application
