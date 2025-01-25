@@ -9,8 +9,7 @@ use App\Middleware\TestMiddleware;
  * Define all web routes for the application
  */
 
-$app->router->middleware(TestMiddleware::class)->get('/', [HomeController::class, 'index']);
-$app->router->get('/test', [HomeController::class, 'indexs']);
-$app->router->post('/store', [HomeController::class, 'store']);
-$app->router->put('/put', [HomeController::class, 'store']);
-$app->router->delete('/delete', [HomeController::class, 'store']);
+$app->router->middleware(TestMiddleware::class)->get('/', [HomeController::class, 'index'])->name('home');
+$app->router->get('/test', [HomeController::class, 'test'])->name('test');
+$app->router->post('/store', [HomeController::class, 'store'])->name('store');
+$app->router->get('/redirect_to_main', [HomeController::class, 'redirect_to_main'])->name('redirect_to_main');

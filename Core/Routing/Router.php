@@ -19,7 +19,7 @@ class Router {
      * 
      * @var array<string, array>
      */
-    protected $routes = [
+    protected static $routes = [
         'GET' => [],
         'POST' => [],
         'PUT' => [],
@@ -31,21 +31,21 @@ class Router {
      * 
      * @var array|null
      */
-    protected $currentRoute = null;
+    protected static $currentRoute = null;
 
     /**
      * Middleware stack for the next route registration
      * 
      * @var array
      */
-    protected $currentMiddleware = [];
+    protected static $currentMiddleware = [];
 
     /**
      * Collection of routes with their assigned names
      * 
      * @var array<string, array>
      */
-    protected $namedRoutes = [];
+    protected static $namedRoutes = [];
 
     /**
      * Register a new GET route
@@ -55,9 +55,9 @@ class Router {
      * @return $this
      */
     public function get($uri, $action) {
-        $this->currentRoute = ['method' => 'GET', 'uri' => $uri];
-        $this->routes['GET'][$uri] = ['action' => $action, 'middleware' => $this->currentMiddleware];
-        $this->currentMiddleware = [];
+        self::$currentRoute = ['method' => 'GET', 'uri' => $uri];
+        self::$routes['GET'][$uri] = ['action' => $action, 'middleware' => self::$currentMiddleware];
+        self::$currentMiddleware = [];
         return $this;
     }
 
@@ -69,9 +69,9 @@ class Router {
      * @return $this
      */
     public function post($uri, $action) {
-        $this->currentRoute = ['method' => 'POST', 'uri' => $uri];
-        $this->routes['POST'][$uri] = ['action' => $action, 'middleware' => $this->currentMiddleware];
-        $this->currentMiddleware = [];
+        self::$currentRoute = ['method' => 'POST', 'uri' => $uri];
+        self::$routes['POST'][$uri] = ['action' => $action, 'middleware' => self::$currentMiddleware];
+        self::$currentMiddleware = [];
         return $this;
     }
 
@@ -83,9 +83,9 @@ class Router {
      * @return $this
      */
     public function put($uri, $action) {
-        $this->currentRoute = ['method' => 'PUT', 'uri' => $uri];
-        $this->routes['PUT'][$uri] = ['action' => $action, 'middleware' => $this->currentMiddleware];
-        $this->currentMiddleware = [];
+        self::$currentRoute = ['method' => 'PUT', 'uri' => $uri];
+        self::$routes['PUT'][$uri] = ['action' => $action, 'middleware' => self::$currentMiddleware];
+        self::$currentMiddleware = [];
         return $this;
     }
 
@@ -97,9 +97,9 @@ class Router {
      * @return $this
      */
     public function delete($uri, $action) {
-        $this->currentRoute = ['method' => 'DELETE', 'uri' => $uri];
-        $this->routes['DELETE'][$uri] = ['action' => $action, 'middleware' => $this->currentMiddleware];
-        $this->currentMiddleware = [];
+        self::$currentRoute = ['method' => 'DELETE', 'uri' => $uri];
+        self::$routes['DELETE'][$uri] = ['action' => $action, 'middleware' => self::$currentMiddleware];
+        self::$currentMiddleware = [];
         return $this;
     }
 
@@ -110,15 +110,15 @@ class Router {
      * @return $this
      */
     public function middleware($middleware = []) {
-        if ($this->currentRoute) {
-            $method = $this->currentRoute['method'];
-            $uri = $this->currentRoute['uri'];
-            $this->routes[$method][$uri]['middleware'] = array_merge(
-                $this->routes[$method][$uri]['middleware'],
+        if (self::$currentRoute) {
+            $method = self::$currentRoute['method'];
+            $uri = self::$currentRoute['uri'];
+            self::$routes[$method][$uri]['middleware'] = array_merge(
+                self::$routes[$method][$uri]['middleware'],
                 is_array($middleware) ? $middleware : [$middleware]
             );
         } else {
-            $this->currentMiddleware = is_array($middleware) ? $middleware : [$middleware];
+            self::$currentMiddleware = is_array($middleware) ? $middleware : [$middleware];
         }
         return $this;
     }
@@ -130,8 +130,8 @@ class Router {
      * @return $this
      */
     public function name($name) {
-        if ($this->currentRoute) {
-            $this->namedRoutes[$name] = $this->currentRoute;
+        if (self::$currentRoute) {
+            self::$namedRoutes[$name] = self::$currentRoute;
         }
         return $this;
     }
@@ -146,8 +146,8 @@ class Router {
     public function dispatch($uri, $method) {
         $uri = parse_url($uri, PHP_URL_PATH);
 
-        if (isset($this->routes[$method][$uri])) {
-            $route = $this->routes[$method][$uri];
+        if (isset(self::$routes[$method][$uri])) {
+            $route = self::$routes[$method][$uri];
             $action = $route['action'];
             $middleware = $route['middleware'];
 
@@ -165,13 +165,35 @@ class Router {
     }
 
     /**
+     * Get all registered routes
+     * 
+     * @return array
+     */
+    public static function getRoutes() {
+        return self::$routes;
+    }
+
+
+    /**
+     * Get the URI for a named route
+     * 
+     * @param string $name The name of the route
+     * @return string|null
+     */
+    public static function getRoute($name) {
+        if (isset(self::$namedRoutes[$name])) {
+            return self::$namedRoutes[$name]['uri'];
+        }
+    }
+
+    /**
      * Check if the URI exists for any HTTP method
      * 
      * @param string $uri The URI to check
      * @return bool
      */
     private function methodExistsForRoute($uri) {
-        foreach ($this->routes as $method => $routes) {
+        foreach (self::$routes as $method => $routes) {
             if (isset($routes[$uri])) {
                 return true;
             }

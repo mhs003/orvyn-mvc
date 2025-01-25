@@ -61,11 +61,13 @@ class Response
      * Set the response content
      * 
      * @param string $content The content to send in the response
+     * @param int $statusCode Optional HTTP status code
      * @return static
      */
-    public static function setContent($content)
+    public static function setContent($content, $statusCode = 200)
     {
         self::$content = $content;
+        self::setStatusCode($statusCode);
         return new static();
     }
 
@@ -73,13 +75,15 @@ class Response
      * Send a JSON response
      * 
      * @param mixed $data The data to be encoded as JSON
-     * @return static
+     * @param int $statusCode Optional HTTP status code
+     * @return void
      */
-    public static function json($data)
+    public static function json($data, $statusCode = 200)
     {
         self::setContent(json_encode($data));
         self::header('Content-Type', 'application/json');
-        return new static();
+        self::setStatusCode($statusCode);
+        return self::send();
     }
 
     /**
@@ -87,7 +91,7 @@ class Response
      * 
      * @param string $filePath Path to the file to be downloaded
      * @param string|null $fileName Optional custom name for the downloaded file
-     * @return static
+     * @return void
      */
     public static function download($filePath, $fileName = null)
     {
@@ -100,7 +104,7 @@ class Response
         } else {
             self::setStatusCode(404)->setContent('File not found.');
         }
-        return new static();
+        return self::send();
     }
 
     /**

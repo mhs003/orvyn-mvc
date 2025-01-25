@@ -1,7 +1,7 @@
 <?php
 
 // Load autloader
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../dumper/autoload.php';
 
 // Load the app bootstrap file
 require_once __DIR__ . '/../bootstrap/app.php';
