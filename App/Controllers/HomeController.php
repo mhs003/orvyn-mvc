@@ -15,15 +15,15 @@ use Core\Routing\Router;
  */
 class HomeController {
     public function index() {
-        Response::setContent("Welcome to Unown! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test') . "'>test page</a>")->send();
+        Response::setContent("Welcome to Unown! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'hi']) . "'>test page</a>")->send();
     }
 
     public function store(Request $request) {
         Response::setContent("Hi " . $request->input('name'))->send();
     }
     
-    public function test() {
-        return response()->setContent("This is a test response. Redirect to <a href='" . route('redirect_to_main') . "'>Home</a>")->send();
+    public function test(Request $request, $param) {
+        return response()->setContent("This is a test response, <b>{$param}</b>. Redirect to <a href='" . route('redirect_to_main') . "'>Home</a>")->send();
     }
 
     public function redirect_to_main() {

@@ -145,24 +145,39 @@ class Router {
      */
     public function dispatch($uri, $method) {
         $uri = parse_url($uri, PHP_URL_PATH);
-
-        if (isset(self::$routes[$method][$uri])) {
-            $route = self::$routes[$method][$uri];
-            $action = $route['action'];
-            $middleware = $route['middleware'];
-
-            $request = new Request();
-            $this->buildMiddlewarePipeline($middleware, $request, $action);
-        } else {
-            if ($this->methodExistsForRoute($uri)) {
-                http_response_code(405);
-                echo "405 Method Not Allowed";
-            } else {
-                http_response_code(404);
-                echo "404 Not Found";
+    
+        foreach (self::$routes[$method] as $routeUri => $route) {
+            $pattern = preg_replace('/\{(\w+)\?\}/', '(?<$1>[^/]+)?', $routeUri); // Optional parameters
+            $pattern = preg_replace('/\{(\w+)\}/', '(?<$1>[^/]+)', $pattern); // Required parameters
+            $pattern = "#^{$pattern}$#";
+    
+            if (preg_match($pattern, $uri, $matches)) {
+                $action = $route['action'];
+                $middleware = $route['middleware'];
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY); // Extract named params
+    
+                $request = new Request();
+                $this->buildMiddlewarePipeline($middleware, $request, function () use ($action, $request, $params) {
+                    $response = $this->callAction($action, $request, $params);
+                    if ($response instanceof Response) {
+                        $response->send();
+                    } else {
+                        echo $response;
+                    }
+                });
+                return;
             }
         }
+    
+        if ($this->methodExistsForRoute($uri)) {
+            http_response_code(405);
+            echo "405 Method Not Allowed";
+        } else {
+            http_response_code(404);
+            echo "404 Not Found";
+        }
     }
+    
 
     /**
      * Get all registered routes
@@ -236,28 +251,25 @@ class Router {
      * 
      * @param mixed $action The route handler (callable|array|string)
      * @param Request $request The current request instance
+     * @param array $params Named parameters extracted from the URI
      * @return mixed
      */
-    private function callAction($action, $request) {
+    private function callAction($action, $request, $params = []) {
         if (is_callable($action)) {
-            return call_user_func($action, $request);
+            return call_user_func($action, $request, ...array_values($params));
         } elseif (is_array($action) && count($action) === 2) {
             [$controller, $method] = $action;
             if (class_exists($controller) && method_exists($controller, $method)) {
-                return call_user_func([new $controller, $method], $request);
-            } else {
-                return "Controller or method not found: $controller@$method";
+                return call_user_func([new $controller, $method], $request, ...array_values($params));
             }
         } elseif (is_string($action)) {
             [$controller, $method] = explode('@', $action);
             $controller = "App\\Controllers\\$controller";
             if (class_exists($controller) && method_exists($controller, $method)) {
-                return call_user_func([new $controller, $method], $request);
-            } else {
-                return "Controller or method not found: $controller@$method";
+                return call_user_func([new $controller, $method], $request, ...array_values($params));
             }
-        } else {
-            return "Invalid route action.";
         }
+        return "Invalid route action.";
     }
+    
 }
