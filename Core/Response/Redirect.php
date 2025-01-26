@@ -35,7 +35,7 @@ class Redirect
      */
     protected static $sessionData = [];
 
-    
+
     /**
      * Redirect to a given URL with an optional status code
      * 
@@ -62,7 +62,7 @@ class Redirect
         exit;
     }
 
-    
+
     /**
      * Add flash data to the session
      * 
@@ -76,7 +76,7 @@ class Redirect
         self::to(self::$url); // Redirect to the same URL after adding flash data
     }
 
-    
+
     /**
      * Redirect with an error message
      * 
@@ -89,7 +89,7 @@ class Redirect
         self::to(self::$url);
     }
 
-    
+
     /**
      * Redirect with a success message
      * 
@@ -102,7 +102,7 @@ class Redirect
         self::to(self::$url);
     }
 
-    
+
     /**
      * Redirect with input data
      * 
@@ -115,7 +115,7 @@ class Redirect
         self::to(self::$url);
     }
 
-    
+
     /**
      * Redirect to a named route
      * 
@@ -131,6 +131,9 @@ class Redirect
             // Replace any parameters in the route
             foreach ($params as $key => $value) {
                 $uri = str_replace("{{$key}}", $value, $uri);
+            }
+            if (preg_match('/\{(\w+)\}/', $uri, $matches)) {
+                dd("Missing parameter for route '{$name}': {{$matches[1]}}");
             }
             self::to($uri);
         }

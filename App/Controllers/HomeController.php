@@ -15,7 +15,7 @@ use Core\Routing\Router;
  */
 class HomeController {
     public function index() {
-        Response::setContent("Welcome to Unown! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'hi']) . "'>test page</a>")->send();
+        Response::setContent("Welcome to Unown! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'yes']) . "'>test page</a>")->send();
     }
 
     public function store(Request $request) {

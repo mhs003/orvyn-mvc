@@ -170,11 +170,9 @@ class Router {
         }
     
         if ($this->methodExistsForRoute($uri)) {
-            http_response_code(405);
-            echo "405 Method Not Allowed";
+            render_error_page(405);
         } else {
-            http_response_code(404);
-            echo "404 Not Found";
+            render_error_page(404);
         }
     }
     
@@ -269,7 +267,7 @@ class Router {
                 return call_user_func([new $controller, $method], $request, ...array_values($params));
             }
         }
-        return "Invalid route action.";
+        render_error_page(500);        
     }
     
 }
