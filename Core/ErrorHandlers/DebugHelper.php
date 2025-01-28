@@ -159,8 +159,7 @@ class DebugHelper
      */
     public static function log($var, $logFile)
     {
-        $trace = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
-        $caller = $trace;
+        $caller = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
 
         $logEntry = sprintf(
             "[%s] Called from %s on line %d\n%s\n---\n",
