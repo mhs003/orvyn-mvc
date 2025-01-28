@@ -7,16 +7,17 @@ class DebugHelper
     /**
      * Dump and die
      * 
-     * @param array $trace Debug backtrace
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function dd($trace, ...$vars)
+    public static function dd(...$vars)
     {
         // Prevent any output buffering issues
         while (ob_get_level()) {
             ob_end_clean();
         }
+
+        $trace = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
 
         // Ensure clean output
         header('Content-Type: text/html; charset=utf-8');
@@ -92,8 +93,8 @@ class DebugHelper
                 </div>
                 
                 <div class="source-info">
-                    <strong>Called from:</strong> ' . htmlspecialchars($trace[1]['file'] ?? $trace[0]['file']) . ' 
-                    on line ' . htmlspecialchars($trace[1]['line'] ?? $trace[0]['line']) . '
+                    <strong>Called from:</strong> ' . htmlspecialchars($trace['file'] ?? $trace['file']) . ' 
+                    on line ' . htmlspecialchars($trace['line'] ?? $trace['line']) . '
                 </div>';
 
         foreach ($vars as $index => $var) {
@@ -103,7 +104,7 @@ class DebugHelper
 
             // Capture output with output control
             ob_start();
-            var_dump($var);
+            print_r($var);
             $dumpOutput = ob_get_clean();
 
             echo '<pre><code class="language-php">' . htmlspecialchars($dumpOutput) . '</code></pre>';
@@ -116,6 +117,22 @@ class DebugHelper
         </html>';
 
         exit(1);
+    }
+
+
+    /**
+     * Dump and die debug mode only 
+     * When debug mode is active, this function will dump the variables, otherwise it will throw 500 error
+     * 
+     * @param mixed ...$vars Variables to dump
+     * @return void
+     */
+    public static function ddb(...$vars) {
+        if (defined('DEBUG') && DEBUG === true) {
+            self::dd(...$vars);
+        } else {
+            render_error_page(500);
+        }
     }
 
     /**
@@ -140,10 +157,10 @@ class DebugHelper
      * @param string $logFile Path to log file
      * @return void
      */
-    public static function log($trace, $var, $logFile)
+    public static function log($var, $logFile)
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
-        $caller = $trace[1] ?? $trace[0];
+        $trace = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
+        $caller = $trace;
 
         $logEntry = sprintf(
             "[%s] Called from %s on line %d\n%s\n---\n",

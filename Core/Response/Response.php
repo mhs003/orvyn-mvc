@@ -76,14 +76,14 @@ class Response
      * 
      * @param mixed $data The data to be encoded as JSON
      * @param int $statusCode Optional HTTP status code
-     * @return void
+     * @return static
      */
     public static function json($data, $statusCode = 200)
     {
         self::setContent(json_encode($data));
         self::header('Content-Type', 'application/json');
         self::setStatusCode($statusCode);
-        return self::send();
+        return new static();
     }
 
     /**

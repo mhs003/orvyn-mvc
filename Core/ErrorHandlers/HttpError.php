@@ -12,6 +12,15 @@ class HttpError
      */
     public static function render($code = 500, $message = null)
     {
+        // Prevent any output buffering issues
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Ensure clean output
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Debug-Mode: Active');
+
         $errors = [
             400 => 'Bad Request',
             401 => 'Unauthorized Access',
@@ -82,20 +91,20 @@ class HttpError
         }
 
         .notfound {
-            max-width: 767px;
+            max-width: 800px;
             width: 100%;
             line-height: 1.4;
             text-align: center;
         }
 
-        .notfound .notfound-404 {
+        .notfound .notfound-message {
             position: relative;
             height: 180px;
             margin-bottom: 20px;
             z-index: -1;
         }
 
-        .notfound .notfound-404 h1 {
+        .notfound .notfound-message h1 {
             font-family: 'Montserrat', sans-serif;
             position: absolute;
             left: 50%;
@@ -115,7 +124,7 @@ class HttpError
         }
 
 
-        .notfound .notfound-404 h2 {
+        .notfound .notfound-message h2 {
             font-family: 'Montserrat', sans-serif;
             position: absolute;
             left: 0;
@@ -150,13 +159,13 @@ class HttpError
         }
 
         @media only screen and (max-width: 767px) {
-            .notfound .notfound-404 h2 {
+            .notfound .notfound-message h2 {
                 font-size: 24px;
             }
         }
 
         @media only screen and (max-width: 480px) {
-            .notfound .notfound-404 h1 {
+            .notfound .notfound-message h1 {
                 font-size: 182px;
             }
         }
@@ -169,7 +178,7 @@ class HttpError
 
     <div id="notfound">
         <div class="notfound">
-            <div class="notfound-404">
+            <div class="notfound-message">
                 <h1>{$code}</h1>
                 <h2>{$message}</h2>
             </div>

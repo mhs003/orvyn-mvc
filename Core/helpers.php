@@ -27,15 +27,17 @@ if (!function_exists('route')) {
         $uri = \Core\Routing\Router::getRoute($name);
 
         if ($uri) {
-            // Replace any parameters in the route
+            preg_match_all('/\{\w+\}/', $uri, $matches);
+            $params = array_filter($params, fn($param) => $param !== '' && $param !== null && $param !== []);
+            if (count($params) < count($matches[0])) {
+                ddb("Too few argument passed for route '{$name}'. Expected: " . count($matches[0]) . ", Got: " . count($params));
+            }
             foreach ($params as $key => $value) {
                 $uri = str_replace("{{$key}}", $value, $uri);
             }
-            if(preg_match('/\{(\w+)\}/', $uri, $matches)) {
-                dd("Missing parameter for route '{$name}': {{$matches[1]}}");
-            }
             return $uri;
         }
+        ddb("Unknown route '{$name}'");
     }
 }
 
@@ -49,8 +51,13 @@ if (!function_exists('render_error_page')) {
 
 if (!function_exists('dd')) {
     function dd(...$vars) {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
-        \Core\ErrorHandlers\DebugHelper::dd($trace, ...$vars);
+        \Core\ErrorHandlers\DebugHelper::dd(...$vars);
+    }
+}
+
+if (!function_exists('ddb')) {
+    function ddb(...$vars) {
+        \Core\ErrorHandlers\DebugHelper::ddb(...$vars);
     }
 }
 
@@ -64,7 +71,21 @@ if (!function_exists('dump')) {
 
 if (!function_exists('log')) {
     function log($var, $logFile = 'debug.log') {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2);
-        \Core\ErrorHandlers\DebugHelper::log($trace, $var, $logFile);
+        \Core\ErrorHandlers\DebugHelper::log($var, $logFile);
+    }
+}
+
+
+if (!function_exists('final_debug_backtrace')) {
+    function final_debug_backtrace($traces) {
+        $tracer = null;
+        foreach ($traces as $trace) {
+            if (isset($trace['file'])) {
+                $tracer = $trace;
+            } else {
+                break;
+            }
+        }
+        return $tracer;
     }
 }

@@ -123,19 +123,25 @@ class Redirect
      * @param array $params The parameters to replace in the route
      * @return void
      */
+    // public static function route($name, $params = [])
+    // {
+    //     $uri = Router::getRoute($name);
+
+    //     if ($uri) {
+    //         preg_match_all('/\{\w+\}/', $uri, $matches);
+    //         $params = array_filter($params, fn($param) => $param !== '' && $param !== null && $param !== []);
+    //         if (count($params) < count($matches[0])) {
+    //             ddb("Too few argument passed for route '{$name}'. Expected: " . count($matches[0]) . ", Got: " . count($params));
+    //         }
+    //         foreach ($params as $key => $value) {
+    //             $uri = str_replace("{{$key}}", $value, $uri);
+    //         }
+    //         self::to($uri);
+    //     }
+    // }
     public static function route($name, $params = [])
     {
-        $uri = Router::getRoute($name);
-
-        if ($uri) {
-            // Replace any parameters in the route
-            foreach ($params as $key => $value) {
-                $uri = str_replace("{{$key}}", $value, $uri);
-            }
-            if (preg_match('/\{(\w+)\}/', $uri, $matches)) {
-                dd("Missing parameter for route '{$name}': {{$matches[1]}}");
-            }
-            self::to($uri);
-        }
+        $uri = route($name, $params);
+        self::to($uri);
     }
 }

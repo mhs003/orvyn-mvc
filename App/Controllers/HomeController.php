@@ -15,18 +15,18 @@ use Core\Routing\Router;
  */
 class HomeController {
     public function index() {
-        Response::setContent("Welcome to Unown! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'yes']) . "'>test page</a>")->send();
+        return response()->setContent("Welcome to Orvyn! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'test']) . "'>test page</a>");
     }
 
     public function store(Request $request) {
-        Response::setContent("Hi " . $request->input('name'))->send();
+        return response()->setContent("Hi " . $request->input('name'));
     }
     
     public function test(Request $request, $param) {
-        return response()->setContent("This is a test response, <b>{$param}</b>. Redirect to <a href='" . route('redirect_to_main') . "'>Home</a>")->send();
+        return response()->setContent("This is a test response, <b>{$param}</b>. Redirect to <a href='" . route('redirect_to_main') . "'>Home</a>");
     }
 
     public function redirect_to_main() {
-        return redirect()->route('home');
+        redirect()->route('home');
     }
 }
