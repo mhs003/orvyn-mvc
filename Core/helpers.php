@@ -51,20 +51,20 @@ if (!function_exists('render_error_page')) {
 
 if (!function_exists('dd')) {
     function dd(...$vars) {
-        \Core\ErrorHandlers\DebugHelper::dd(...$vars);
+        \Core\ErrorHandlers\DebugHelper::process_dd(...$vars);
     }
 }
 
 if (!function_exists('ddb')) {
     function ddb(...$vars) {
-        \Core\ErrorHandlers\DebugHelper::ddb(...$vars);
+        \Core\ErrorHandlers\DebugHelper::process_ddb(...$vars);
     }
 }
 
 
 if (!function_exists('dump')) {
     function dump(...$vars) {
-        \Core\ErrorHandlers\DebugHelper::dump($vars);
+        \Core\ErrorHandlers\DebugHelper::process_dump($vars);
     }
 }
 
@@ -77,12 +77,11 @@ if (!function_exists('log')) {
 
 
 if (!function_exists('final_debug_backtrace')) {
-    function final_debug_backtrace($traces) {
+    function final_debug_backtrace($traces, $fname = 'dd') {
         $tracer = null;
         foreach ($traces as $trace) {
-            if (isset($trace['file'])) {
+            if (isset($trace['function']) && $trace['function'] === $fname) {
                 $tracer = $trace;
-            } else {
                 break;
             }
         }

@@ -10,7 +10,7 @@ class DebugHelper
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function dd(...$vars)
+    public static function process_dd(...$vars)
     {
         // Prevent any output buffering issues
         while (ob_get_level()) {
@@ -127,9 +127,9 @@ class DebugHelper
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function ddb(...$vars) {
+    public static function process_ddb(...$vars) {
         if (defined('DEBUG') && DEBUG === true) {
-            self::dd(...$vars);
+            self::process_dd(...$vars);
         } else {
             render_error_page(500);
         }
@@ -141,7 +141,7 @@ class DebugHelper
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function dump(...$vars)
+    public static function process_dump(...$vars)
     {
         echo '<div style="background-color:#f4f4f4;padding:15px;margin:10px;border-radius:4px;">';
         foreach ($vars as $var) {
