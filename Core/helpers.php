@@ -41,6 +41,13 @@ if (!function_exists('route')) {
     }
 }
 
+if (!function_exists('config')) {
+    function config(string $key, mixed $default = null) {
+        global $global_config;
+        return $global_config->get($key, $default);
+    }
+}
+
 // Error handling
 
 if (!function_exists('render_error_page')) {

@@ -2,12 +2,14 @@
 
 namespace App\Controllers;
 
+use App\Models\Book;
 use Core\Request\Request;
 use Core\Response\Response;
 use Core\Routing\Router;
 
 class HomeController {
     public function index() {
+        dd(Book::all());
         return view('welcome');
     }
 

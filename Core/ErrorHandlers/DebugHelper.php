@@ -128,7 +128,7 @@ class DebugHelper
      * @return void
      */
     public static function process_ddb(...$vars) {
-        if (defined('DEBUG') && DEBUG === true) {
+        if (config('app.debug') === true) {
             self::process_dd(...$vars);
         } else {
             render_error_page(500);

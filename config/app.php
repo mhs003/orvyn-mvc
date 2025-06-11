@@ -1,2 +1,6 @@
 <?php
-// application configuration file
+
+return [
+    'app_name' => 'Orvyn',
+    'debug' => true
+];

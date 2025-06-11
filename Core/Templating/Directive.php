@@ -25,17 +25,15 @@ class Directive
     public static function extendBuiltins(Compiler $compiler): void
     {
         $compiler->registerDirective('section', function ($expression) {
-            // Remove parentheses and quotes from expression
+            // Remove parentheses and quotes from expression | Why? Because I am lazy
             $sectionName = trim($expression, "()\"'");
             return "<?php \$this->startSection('{$sectionName}'); ?>";
         });
 
-        $compiler->registerDirective('endsection', function ($expression) {
-            return "<?php \$this->endSection(); ?>";
-        });
+        $compiler->registerDirective('endsection', fn($expression) => "<?php \$this->endSection(); ?>");
 
         $compiler->registerDirective('yield', function ($expression) {
-            // Remove parentheses and quotes from expression
+            // Do the same as above
             $yieldName = trim($expression, "()\"'");
             return "<?php echo \$this->yieldContent('{$yieldName}'); ?>";
         });
@@ -44,5 +42,7 @@ class Directive
             $layoutName = trim($expression, "()\"'");
             return "<?php \$this->useLayout('{$layoutName}'); ?>";
         });
+
+        $compiler->registerDirective('config', fn($expression) => "<?php echo config({$expression}) ?>");
     }
 }

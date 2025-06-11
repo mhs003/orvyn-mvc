@@ -1,5 +1,8 @@
 <?php
 
+use Core\Config;
+use Core\LunaORM\Connection;
+use Core\LunaORM\Model;
 use Core\Routing\Router;
 use Core\Templating\Compiler;
 use Core\Templating\Engine;
@@ -13,8 +16,19 @@ use Core\Templating\Engine;
 //  Register custom directives
 require_once __DIR__ . '/../App/Views/Directives.php';
 
+// Initialize config
+$global_config = new Config();
+$global_config->init();
+
+// Database Connection Initialization
+if (config('database.usedriver')) {
+    Connection::connect();
+    Model::setConnection(Connection::getPDO());
+}
+
 // Initialize the view compiler
 $compiler = new Compiler(__DIR__ . '/../resource/views', __DIR__ . '/../resource/compiled-views');
+
 // Register the view engine
 $viewEngine = new Engine($compiler);
 
