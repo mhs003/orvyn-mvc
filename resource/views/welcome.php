@@ -9,7 +9,3 @@
     To <a href='{{ route('test', ['param' => 'test']) }}'>test page</a><br>
     @peko("ooTest")<br>
 @endsection
-
-@section('script')
-    adfasdg
-@endsection
