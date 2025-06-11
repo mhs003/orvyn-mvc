@@ -1,12 +1,25 @@
 <?php
 
 use Core\Routing\Router;
+use Core\Templating\Compiler;
+use Core\Templating\Engine;
 
 /**
  * Application Bootstrap
  * 
  * Initializes the application and its core components
  */
+
+//  Register custom directives
+require_once __DIR__ . '/../App/Views/Directives.php';
+
+// Initialize the view compiler
+$compiler = new Compiler(__DIR__ . '/../resource/views', __DIR__ . '/../resource/compiled-views');
+// Register the view engine
+$viewEngine = new Engine($compiler);
+
+
+// Initialize the application
 $app = new class {
     /**
      * The router instance
@@ -34,4 +47,5 @@ $app = new class {
     }
 };
 
+// Load the application routes
 require_once __DIR__ . '/../routes/web.php';

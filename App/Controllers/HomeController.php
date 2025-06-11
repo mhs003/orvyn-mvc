@@ -8,7 +8,7 @@ use Core\Routing\Router;
 
 class HomeController {
     public function index() {
-        return response()->setContent("Welcome to Orvyn! <br><br><form method='post' action='" . route('store') . "'><input name='name' placeholder='Enter your name' /> <button type='submit'>Submit</button></form><br>To <a href='" . route('test', ['param' => 'test']) . "'>test page</a>");
+        return view('welcome');
     }
 
     public function store(Request $request) {

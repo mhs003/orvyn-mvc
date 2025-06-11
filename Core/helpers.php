@@ -88,3 +88,16 @@ if (!function_exists('final_debug_backtrace')) {
         return $tracer;
     }
 }
+
+// View Engine
+
+if (!function_exists('view')) {
+    function view($template, $data = []) {
+        global $viewEngine;
+        try {
+            return $viewEngine->render($template, $data);
+        } catch (\Core\Templating\Exceptions\TemplateException $e) {
+            dd("Template Error: " . $e->getMessage());
+        }
+    }
+}
