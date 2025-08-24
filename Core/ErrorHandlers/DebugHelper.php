@@ -10,14 +10,14 @@ class DebugHelper
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function process_dd(...$vars)
+    public static function process_dd($name = "dd", ...$vars)
     {
         // Prevent any output buffering issues
         while (ob_get_level()) {
             ob_end_clean();
         }
 
-        $trace = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
+        $trace = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999), $name);
 
         // Ensure clean output
         header('Content-Type: text/html; charset=utf-8');
@@ -127,9 +127,10 @@ class DebugHelper
      * @param mixed ...$vars Variables to dump
      * @return void
      */
-    public static function process_ddb(...$vars) {
+    public static function process_ddb(...$vars)
+    {
         if (config('app.debug') === true) {
-            self::process_dd(...$vars);
+            self::process_dd('ddb', ...$vars);
         } else {
             render_error_page(500);
         }
@@ -159,8 +160,23 @@ class DebugHelper
      */
     public static function log($var, $logFile)
     {
-        $caller = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999));
+        $caller = final_debug_backtrace(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 9999), 'orvyn_log');
 
+        $coreLoggingEnabled = config('app.enable_core_logging') === false ? false : true;
+        $loggingEnabled = config('app.enable_logging') === false ? false : true;
+
+        if (is_core_path($caller['file']) && !$coreLoggingEnabled) {
+            return;
+        }
+
+        if ($loggingEnabled) {
+            self::saveLogs($caller, $var, $logFile);
+        }
+    }
+
+
+    private static function saveLogs($caller, $var, $logFile)
+    {
         $logEntry = sprintf(
             "[%s] Called from %s on line %d\n%s\n---\n",
             date('Y-m-d H:i:s'),
@@ -169,6 +185,6 @@ class DebugHelper
             print_r($var, true)
         );
 
-        file_put_contents($logFile, $logEntry, FILE_APPEND);
+        file_put_contents(log_dir() . leading_slash($logFile), $logEntry, FILE_APPEND);
     }
 }

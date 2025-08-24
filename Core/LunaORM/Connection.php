@@ -37,7 +37,8 @@ class Connection
 
             self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            ddb("DB Connection failed: " . $e->getMessage());
+            orvyn_log("DB Connection failed: " . $e->getMessage() . ' | line ' . $e->getLine());
+            ddb("DB Connection failed: " . $e->getMessage() . ' | line ' . $e->getLine());
         }
     }
 
