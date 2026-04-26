@@ -54,13 +54,13 @@ class Router
 
             $path = null;
 
-            if ($route) $path = $route->newInstance()->path;
-            if ($default) $path = '';
+            if ($route) $path = $this->norm($base . $route->newInstance()->path);
+            if ($default) $path = $base;
 
             if ($path !== null) {
                 $this->routes[] = [
                     'method' => $http,
-                    'path' => $this->norm($base . $path),
+                    'path' => $path,
                     'class' => $class,
                     'action' => $method->getName()
                 ];

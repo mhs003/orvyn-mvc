@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use Attributes\DefaultRoute;
 use Core\Http\Request;
 use Core\Http\Response;
 use Attributes\Route;
@@ -10,7 +11,7 @@ use Attributes\Route;
 class UserController
 {
     #[Route('/:id')]
-    public function show(Request $request, $id)
+    public function show(Request $request, $id = '')
     {
         return Response::make("User ID: " . $id);
     }
