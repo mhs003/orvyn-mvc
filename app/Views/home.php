@@ -1,0 +1,1 @@
+<h1>Hello <?= $name ?> from a small framework</h1>
