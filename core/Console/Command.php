@@ -13,37 +13,31 @@ abstract class Command
 
     protected function info(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;42m  INFO  \e[0m " : '';
-        echo "{$label}\e[0;32m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;42m  INFO  \e[0m {$text}\n\n" : "\e[0;32m{$text}\e[0m\n";
     }
 
     protected function error(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;41m  ERROR  \e[0m\n " : '';
-        echo "{$label}\e[0;31m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;41m  ERROR  \e[0m {$text}\n\n" : "\e[0;31m{$text}\e[0m\n";
     }
     protected function success(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;42m SUCCESS \e[0m " : '';
-        echo "{$label}\e[1;32m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;42m SUCCESS \e[0m {$text}\n\n" : "\e[1;32m{$text}\e[0m\n";
     }
 
     protected function warning(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;43m WARNING \e[0m " : '';
-        echo "{$label}\e[1;33m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;43m WARNING \e[0m {$text}\n\n" : "\e[1;33m{$text}\e[0m\n";
     }
 
     protected function comment(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;44m COMMENT \e[0m " : '';
-        echo "{$label}\e[0;34m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;44m COMMENT \e[0m \n\n" : "\e[0;34m{$text}\e[0m\n";
     }
 
     protected function mute(string $text, ?bool $label = false): void
     {
-        $label = $label ? "\e[1;44m COMMENT \e[0m " : '';
-        echo "{$label}\e[0;30m{$text}\e[0m\n";
+        echo $label ? "\n\e[1;44m COMMENT \e[0m {$text}\n\n" : "\e[0;30m{$text}\e[0m\n";
     }
 
     protected function line(string $text): void
