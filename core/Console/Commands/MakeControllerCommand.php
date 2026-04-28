@@ -13,31 +13,40 @@ class MakeControllerCommand extends Command
     {
         $name = $args[0] ?? null;
 
-        if(!$name) {
-            $this->error('Controller name is required');
+        if (!$name) {
+            $this->error('Controller name is required', true);
             return;
         }
 
-        $classBaseName = $this->extractClassBaseName($name);
+        $classBaseNamespaces = $this->extractClassBaseNamespace($name);
+        $classBaseName = $classBaseNamespaces[1];
         $className = "{$classBaseName}Controller";
-        $path = __DIR__ . '/../../../app/Controllers/' . $className . '.php';
+        $baseFilepath = (\count($classBaseNamespaces[0]) > 0 ? implode('/', $classBaseNamespaces[0]) . '/' : '') . $className . '.php';
+        $path = __DIR__ . '/../../../app/Controllers/' . $baseFilepath;
 
-        if(file_exists($path)) {
-            $this->error('Controller already exists');
+        if (!is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755);
+        }
+
+        if (file_exists($path)) {
+            $this->error('Controller already exists', true);
             return;
         }
+
+        $namespace_postfix = \count($classBaseNamespaces[0]) > 0 ? '\\' . implode('\\', $classBaseNamespaces[0]) : '';
+        $route_path = str_replace('\\', '/', $namespace_postfix) . '/' . $classBaseName;
 
         $template = <<<PHP
 <?php
 
-namespace App\Controllers;
+namespace App\Controllers{$namespace_postfix};
 
+use Attributes\Route;
 use Attributes\DefaultRoute;
 use Core\Http\Request;
 use Core\Http\Response;
-use Attributes\Route;
 
-#[Route('/{$classBaseName}')]
+#[Route('{$route_path}')]
 class {$className}
 {
     #[DefaultRoute]
@@ -49,13 +58,16 @@ class {$className}
 PHP;
 
         file_put_contents($path, $template);
-        $this->info("Controller app/Controllers/{$className}.php created.");
+        $this->info("Controller app/Controllers/{$baseFilepath} created.", true);
     }
 
-    private function extractClassBaseName(string $name): string {
-        if(str_ends_with(strtolower($name), 'controller')) {
+    private function extractClassBaseNamespace(string $name): array
+    {
+        if (str_ends_with(strtolower($name), 'controller')) {
             $name = substr($name, 0, \strlen($name) - 10);
         }
-        return ucfirst($name);
+        $namespace_extracted = explode('/', $name);
+        $name = ucfirst(array_pop($namespace_extracted));
+        return [$namespace_extracted, $name];
     }
 }
