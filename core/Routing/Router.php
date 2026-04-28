@@ -20,10 +20,25 @@ class Router
 
     public function loadControllers()
     {
-        $files = glob(__DIR__ . '/../../app/Controllers/*.php');
+        $basePath = realpath(__DIR__ . '/../../app/Controllers');
+        $baseNamespace = 'App\\Controllers';
 
-        foreach ($files as $file) {
-            $class = 'App\\Controllers\\' . basename($file, '.php');
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($basePath)
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relativePath = str_replace($basePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+
+            $class = $baseNamespace . '\\' . str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
 
             if (class_exists($class)) {
                 $this->register($class);

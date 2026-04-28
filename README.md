@@ -1,14 +1,4 @@
-# Mini PHP Framework 🚀
-
-A tiny Laravel-like framework built with:
-
-- PHP 8 Attributes
-- PSR-4 Autoloading
-- DI Container
-- Attribute Router
-- Minimal HTTP layer
-
----
+# Orvyn v2
 
 ## Install
 
@@ -17,18 +7,17 @@ composer install
 composer dump-autoload
 ```
 
----
 
 ## Run
 
 ```bash
-php -S localhost:8000 -t public
+php orvyn serve
 ```
 
----
+## Available commands
 
-## Routes
-
-- GET / → MainController
-- GET /user/123 → UserController
+```bash
+php orvyn make:controller [ControllerName]
+php orvyn make:command [CommandName]
+php orvyn serve <host:port>
 ```
