@@ -3,15 +3,17 @@
 namespace Core\Console\Commands;
 
 use Core\Console\Command;
+use Core\Console\Input;
 
 class ServeCommand extends Command
 {
     public string $signature = 'serve';
     public string $description = 'Start the orvyn server';
 
-    public function handle(array $args): void
+    public function handle(Input $input): void
     {
-        [$host, $port] = $this->extract_host_port($args[0] ?? '127.0.0.1:1078');
+        $inp = $input->arg(0);
+        [$host, $port] = $this->extract_host_port($inp ?? '127.0.0.1:1078');
         $host = $host ?: '127.0.0.1';
         $port = $port ?: 1078;
         

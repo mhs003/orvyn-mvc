@@ -8,7 +8,7 @@ abstract class Command
     public string $signature;
     public string $description = '';
 
-    abstract public function handle(array $args): void;
+    abstract public function handle(Input $input): void;
 
 
     protected function info(string $text, ?bool $label = false): void

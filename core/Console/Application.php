@@ -13,13 +13,13 @@ class Application
 
     public function run(array $argv)
     {
-        $command = $argv[1] ?? null;
+        $input = new Input($argv);
         
-        if(!$command) {
+        if(!$input->command) {
             echo "No command provided\n";
             return;
         }
 
-        $this->kernel->handle($command, \array_slice($argv, 2));
+        $this->kernel->handle($input);
     }
 }

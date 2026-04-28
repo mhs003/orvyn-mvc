@@ -12,17 +12,17 @@ class Kernel
         $this->loadCommandsFrom(__DIR__ . '/../../app/Console', 'App\\Console');
     }
 
-    public function handle(string $name, array $args)
+    public function handle(Input $input)
     {
         foreach ($this->commands as $commandClass) {
             $command = new $commandClass;
 
-            if ($name === $command->signature) {
-                return $command->handle($args);
+            if ($input->command === $command->signature) {
+                return $command->handle($input);
             }
         }
 
-        echo "Command not found {$name}\n";
+        echo "Command not found {$input->command}\n";
     }
 
     protected function loadCommandsFrom(string $path, string $namespace)

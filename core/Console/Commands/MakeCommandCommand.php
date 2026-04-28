@@ -3,20 +3,23 @@
 namespace Core\Console\Commands;
 
 use Core\Console\Command;
+use Core\Console\Input;
 
 class MakeCommandCommand extends Command
 {
     public string $signature = 'make:command';
     public string $description = 'Create console command';
 
-    public function handle(array $args): void
+    public function handle(Input $input): void
     {
-        $name = $args[0] ?? null;
+        $name = $input->arg(0);
 
         if(!$name) {
             $this->error('Command name is required', true);
             return;
         }
+
+        $name = str_replace(['/', '\\'], '', $name);
 
         $path = __DIR__ . '/../../../app/Console/' . $name . '.php';
 
@@ -35,13 +38,14 @@ class MakeCommandCommand extends Command
 namespace App\Console;
 
 use Core\Console\Command;
+use Core\Console\Input;
 
 class {$name} extends Command
 {
     public string \$signature = "{$signature}";
     public string \$description = '';
 
-    public function handle(array \$args): void
+    public function handle(Input \$input): void
     {
         //
     }
