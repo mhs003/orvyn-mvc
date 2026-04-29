@@ -12,5 +12,4 @@ $global_config->init();
 
 if (config('database')) {
     DB::init();
-    var_dump(DB::getPdo()->errorInfo());
 }
