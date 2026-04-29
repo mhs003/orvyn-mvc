@@ -1,1 +1,1 @@
-<h1>Hello <?= $name ?> from a small framework</h1>
+<h1>Hello from <u><?= config('app.name') . ' ' . $version ?></u></h1>

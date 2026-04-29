@@ -13,7 +13,7 @@ class MainController
     #[DefaultRoute]
     public function index(Request $request)
     {
-        return view("home", ['name' => '<u>World</u>']);
+        return view("home", ['version' => config('app.version_name')]);
     }
 
     #[Method('POST')]
