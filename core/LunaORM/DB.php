@@ -32,4 +32,9 @@ class DB
     {
         return self::connection()->$method(...$args);
     }
+
+    public static function table(string $table): QueryBuilder
+    {
+        return new QueryBuilder($table, self::connection());
+    }
 }

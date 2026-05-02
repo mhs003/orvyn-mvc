@@ -2,57 +2,88 @@
 
 namespace Core\LunaORM;
 
+use Closure;
+
 class Schema
 {
     public static function driver(): string
     {
         return DB::connection()->getPdo()->getAttribute(\PDO::ATTR_DRIVER_NAME);
     }
-    
-    public static function create(string $table, callable $callback): void
+
+    public static function create(string $table, Closure $callback): void
     {
         $blueprint = new Blueprint($table);
         $blueprint->create();
+
         $callback($blueprint);
-        $sql = $blueprint->toSql();
-        DB::connection()->query($sql);
+
+        static::executeBlueprint($blueprint);
     }
 
-    public static function table(string $table, callable $callback): void
+    public static function table(string $table, Closure $callback): void
     {
         $blueprint = new Blueprint($table);
         $callback($blueprint);
-        $sql = $blueprint->toSql();
-        if ($sql) {
-            DB::connection()->query($sql);
+
+        static::executeBlueprint($blueprint);
+    }
+
+    protected static function executeBlueprint(Blueprint $blueprint): void
+    {
+        $statements = $blueprint->toSql();
+
+        foreach ($statements as $sql) {
+            if (trim($sql) !== '') {
+                DB::connection()->query($sql)->fetch();
+            }
         }
     }
 
     public static function drop(string $table): void
     {
-        DB::connection()->query("DROP TABLE " . self::wrap($table));
+        $wrapped = static::wrap($table);
+        DB::connection()->query("DROP TABLE {$wrapped}")->fetch();
     }
 
     public static function dropIfExists(string $table): void
     {
-        DB::connection()->query("DROP TABLE IF EXISTS {$table}");
+        $wrapped = static::wrap($table);
+        $ifExists = static::driver() === 'sqlite' ? '' : 'IF EXISTS';
+        DB::connection()->query("DROP TABLE {$ifExists} {$wrapped}")->fetch();
     }
 
     public static function hasTable(string $table): bool
     {
+        $driver = static::driver();
+
         try {
-            DB::connection()->query(
-                Schema::driver() === 'sqlite' ? "SELECT name FROM sqlite_master WHERE type='table' AND name='{$table}'" : "SHOW TABLES LIKE '{$table}'"
-            );
-            return true;
+            if ($driver === 'sqlite') {
+                $result = DB::connection()->query(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    [$table]
+                )->fetch();
+            } else {
+                // MySQL / MariaDB
+                $result = DB::connection()->query(
+                    "SHOW TABLES LIKE ?",
+                    [$table]
+                )->fetch();
+            }
+
+            return !empty($result);
         } catch (\Exception $e) {
             return false;
         }
     }
 
-    protected static function wrap(string $name): string
+    public static function wrap(string $name): string
     {
-        return Schema::driver() === 'sqlite' ? "\"{$name}\"" : "`{$name}`";
+        $driver = static::driver();
+        return match ($driver) {
+            'sqlite' => "\"{$name}\"",
+            default  => "`{$name}`", // MySQL, MariaDB, etc.
+        };
     }
 }
 
@@ -60,9 +91,7 @@ class Blueprint
 {
     protected string $table;
     protected bool $creating = false;
-    protected array $columns = [];
-    protected array $modifiers = [];
-    protected array $indexes = [];
+    protected array $commands = [];
 
     public function __construct(string $table)
     {
@@ -76,13 +105,11 @@ class Blueprint
 
     public function id(string $column = 'id'): ColumnDefinition
     {
-        $isSqlite = Schema::driver() === 'sqlite';
-
-        if ($isSqlite) {
-            return $this->addColumn('INTEGER', $column, ['PRIMARY KEY AUTOINCREMENT']);
-        }
-
-        return $this->addColumn('INT', $column, ['AUTO_INCREMENT', 'PRIMARY KEY']);
+        return $this->addColumn(
+            Schema::driver() === 'sqlite' ? 'INTEGER' : 'BIGINT',
+            $column,
+            ['primary', 'autoincrement']
+        );
     }
 
     public function string(string $column, int $length = 255): ColumnDefinition
@@ -134,135 +161,240 @@ class Blueprint
 
     public function timestamps(): void
     {
-        $this->timestamp('created_at')->nullable();
-        $this->timestamp('updated_at')->nullable();
+        $this->timestamp('created_at')->nullable()->default('CURRENT_TIMESTAMP');
+        $this->timestamp('updated_at')->nullable()->useCurrentOnUpdate();
     }
 
-    protected function addColumn(string $type, string $column, array $extra = []): ColumnDefinition
+    protected function addColumn(string $type, string $name, array $modifiers = []): ColumnDefinition
     {
-        $definition = new ColumnDefinition($type, $column, $extra);
-        $this->columns[] = $definition;
-        return $definition;
+        $column = new ColumnDefinition($name, $type, $modifiers);
+        $this->commands[] = $column;
+        return $column;
     }
 
-    public function index(string $column): void
+    public function index(string|array $columns, ?string $name = null): void
     {
-        $this->indexes[] = $column;
+        $this->commands[] = new IndexDefinition($columns, 'index', $name);
     }
 
-    public function toSql(): string
+    public function unique(string|array $columns, ?string $name = null): void
     {
-        $sql = $this->creating ? $this->compileCreate() : $this->compileAlter();
-
-        foreach ($this->indexes as $column) {
-            $sql .= "; CREATE INDEX {$this->table}_{$column}_index ON {$this->table} ({$column})";
-        }
-
-        return $sql;
+        $this->commands[] = new IndexDefinition($columns, 'unique', $name);
     }
 
-    protected function compileCreate(): string
+    public function toSql(): array
     {
-        $columns = [];
-
-        foreach ($this->columns as $column) {
-            $sql = "{$column->column} {$column->type}";
-            if (!empty($column->extra)) {
-                $sql .= ' ' . implode(' ', $column->extra);
-            }
-            if ($column->nullable) {
-                $sql .= ' NULL';
-            } else {
-                $sql .= ' NOT NULL';
-            }
-            if ($column->default !== null) {
-                if (is_numeric($column->default)) {
-                    $sql .= " DEFAULT {$column->default}";
-                } elseif (strtoupper($column->default) === 'CURRENT_TIMESTAMP') {
-                    $sql .= " DEFAULT CURRENT_TIMESTAMP";
-                } else {
-                    $sql .= " DEFAULT '{$column->default}'";
-                }
-            }
-            if (Schema::driver() === 'mysql') $sql .= "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-            $columns[] = $sql;
-        }
-
-        return \sprintf('CREATE TABLE %s (%s)', $this->table, implode(', ', $columns));
+        $grammar = GrammarFactory::make(Schema::driver());
+        return $this->creating 
+            ? $grammar->compileCreate($this) 
+            : $grammar->compileAlter($this);
     }
 
-    protected function compileAlter(): string
-    {
-        if (empty($this->columns)) {
-            return '';
-        }
-
-        $columns = [];
-
-        foreach ($this->columns as $column) {
-            $sql = "ADD COLUMN {$column->column} {$column->type}";
-            if (!empty($column->extra)) {
-                $sql .= ' ' . implode(' ', $column->extra);
-            }
-            if ($column->nullable) {
-                $sql .= ' NULL';
-            } else {
-                $sql .= ' NOT NULL';
-            }
-            if ($column->default !== null) {
-                if (is_numeric($column->default)) {
-                    $sql .= " DEFAULT {$column->default}";
-                } elseif (strtoupper($column->default) === 'CURRENT_TIMESTAMP') {
-                    $sql .= " DEFAULT CURRENT_TIMESTAMP";
-                } else {
-                    $sql .= " DEFAULT '{$column->default}'";
-                }
-            }
-            $columns[] = $sql;
-        }
-
-        return sprintf('ALTER TABLE %s %s', $this->table, implode(', ', $columns));
-    }
+    public function getTable(): string { return $this->table; }
+    public function isCreating(): bool { return $this->creating; }
+    public function getCommands(): array { return $this->commands; }
 }
 
 class ColumnDefinition
 {
-    public string $column;
-    public string $type;
-    public array $extra;
-    public bool $nullable = false;
-    public mixed $default = null;
+    public function __construct(
+        public readonly string $name,
+        public string $type,
+        public array $modifiers = []
+    ) {}
 
-    public function __construct(string $type, string $column, array $extra = [])
+    public function nullable(bool $value = true): self
     {
-        $this->type = $type;
-        $this->column = $column;
-        $this->extra = $extra;
-    }
-
-    public function nullable(): self
-    {
-        $this->nullable = true;
+        $this->modifiers['nullable'] = $value;
         return $this;
     }
 
     public function default(mixed $value): self
     {
-        $this->default = $value;
-        return $this;
-    }
-
-    public function unique(): self
-    {
-        $this->extra[] = 'UNIQUE';
+        $this->modifiers['default'] = $value;
         return $this;
     }
 
     public function unsigned(): self
     {
-        if (Schema::driver() !== 'sqlite') {
-            $this->type = 'UNSIGNED ' . $this->type;
-        }
+        $this->modifiers['unsigned'] = true;
         return $this;
+    }
+
+    public function unique(): self
+    {
+        $this->modifiers['unique'] = true;
+        return $this;
+    }
+
+    public function useCurrentOnUpdate(): self
+    {
+        $this->modifiers['on_update_current_timestamp'] = true;
+        return $this;
+    }
+}
+
+class IndexDefinition
+{
+    public function __construct(
+        public readonly string|array $columns,
+        public readonly string $type = 'index',
+        public readonly ?string $name = null
+    ) {}
+}
+
+class GrammarFactory
+{
+    public static function make(string $driver): Grammar
+    {
+        return match ($driver) {
+            'sqlite' => new SqliteGrammar(),
+            default  => new MySqlGrammar(), // mysql, mariadb
+        };
+    }
+}
+
+abstract class Grammar
+{
+    abstract public function compileCreate(Blueprint $blueprint): array;
+    abstract public function compileAlter(Blueprint $blueprint): array;
+
+    protected function wrap(string $value): string
+    {
+        return Schema::wrap($value);
+    }
+
+    protected function wrapTable(Blueprint $blueprint): string
+    {
+        return $this->wrap($blueprint->getTable());
+    }
+}
+
+class MySqlGrammar extends Grammar
+{
+    public function compileCreate(Blueprint $blueprint): array
+    {
+        $columns = [];
+        $primary = null;
+
+        foreach ($blueprint->getCommands() as $command) {
+            if ($command instanceof ColumnDefinition) {
+                $colSql = $this->compileColumn($command);
+
+                if (\in_array('primary', $command->modifiers ?? [], true) || ($command->name === 'id' && !isset($primary))) {
+                    $primary = $command->name;
+                }
+
+                $columns[] = $colSql;
+            }
+        }
+
+        $sql = "CREATE TABLE {$this->wrapTable($blueprint)} (" . implode(', ', $columns);
+
+        if ($primary) {
+            $sql .= ", PRIMARY KEY (" . $this->wrap($primary) . ")";
+        }
+
+        $sql .= ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+        $statements = [$sql];
+
+        // Add indexes
+        $statements = \array_merge($statements, $this->compileIndexes($blueprint));
+
+        return $statements;
+    }
+
+    public function compileAlter(Blueprint $blueprint): array
+    {
+        $statements = [];
+
+        foreach ($blueprint->getCommands() as $command) {
+            if ($command instanceof ColumnDefinition) {
+                $colSql = $this->compileColumn($command, true);
+                $statements[] = "ALTER TABLE {$this->wrapTable($blueprint)} ADD COLUMN {$colSql}";
+            }
+        }
+
+        $statements = array_merge($statements, $this->compileIndexes($blueprint));
+
+        return $statements;
+    }
+
+    protected function compileColumn(ColumnDefinition $column, bool $isAlter = false): string
+    {
+        $sql = $this->wrap($column->name) . ' ' . $column->type;
+
+        if (!empty($column->modifiers['unsigned'] ?? false)) {
+            $sql .= ' UNSIGNED';
+        }
+
+        $nullable = $column->modifiers['nullable'] ?? false;
+        $sql .= $nullable ? ' NULL' : ' NOT NULL';
+
+        if (isset($column->modifiers['default'])) {
+            $default = $column->modifiers['default'];
+            if ($default === 'CURRENT_TIMESTAMP') {
+                $sql .= " DEFAULT CURRENT_TIMESTAMP";
+            } elseif (is_numeric($default)) {
+                $sql .= " DEFAULT {$default}";
+            } else {
+                $sql .= " DEFAULT '" . addslashes($default) . "'";
+            }
+        }
+
+        if(\in_array('autoincrement', $column->modifiers, 1)) {
+            $sql .= ' AUTO_INCREMENT';
+        }
+
+        if (!empty($column->modifiers['on_update_current_timestamp'] ?? false)) {
+            $sql .= " ON UPDATE CURRENT_TIMESTAMP";
+        }
+
+        if (!empty($column->modifiers['unique'] ?? false)) {
+            $sql .= ' UNIQUE';
+        }
+
+        return $sql;
+    }
+
+    protected function compileIndexes(Blueprint $blueprint): array
+    {
+        $statements = [];
+        foreach ($blueprint->getCommands() as $command) {
+            if ($command instanceof IndexDefinition) {
+                $cols = is_array($command->columns) 
+                    ? implode(', ', array_map($this->wrap(...), $command->columns))
+                    : $this->wrap($command->columns);
+
+                $indexName = $command->name ?? $blueprint->getTable() . '_' . 
+                            (is_array($command->columns) ? implode('_', $command->columns) : $command->columns) . '_index';
+
+                $type = $command->type === 'unique' ? 'UNIQUE INDEX' : 'INDEX';
+
+                $statements[] = "CREATE {$type} {$this->wrap($indexName)} ON {$this->wrapTable($blueprint)} ({$cols})";
+            }
+        }
+        return $statements;
+    }
+}
+
+class SqliteGrammar extends MySqlGrammar
+{
+    public function compileCreate(Blueprint $blueprint): array
+    {
+        $sql = parent::compileCreate($blueprint);
+
+        return $sql;
+    }
+
+    protected function compileColumn(ColumnDefinition $column, bool $isAlter = false): string
+    {
+        $sql = parent::compileColumn($column, $isAlter);
+
+        $sql .= str_replace(' UNSIGNED', '', $sql);
+        $sql .= str_replace(' AUTO_INCREMENT', ' AUTOINCREMENT', $sql);
+
+        return $sql;
     }
 }

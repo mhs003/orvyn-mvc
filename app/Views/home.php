@@ -1,1 +1,1 @@
-<h1>Hello from <u><?= config('app.name') . ' ' . $version ?></u></h1>
+<h1>Hello from <u><?= config('app.name') . ' ' . ($version ?? '') ?></u></h1>
